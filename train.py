@@ -7,6 +7,9 @@ import glob
 import time
 from sklearn.svm import LinearSVC
 from sklearn.preprocessing import StandardScaler
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.externals import joblib
+
 
 from features import extract_features
 
@@ -20,28 +23,43 @@ from sklearn.cross_validation import train_test_split
 
 def load_and_train_all_features():
     # Read in car and non-car images
-    images = glob.glob('*.jpeg')
+
+    #non_vehicle_images = glob.glob('training_data/non-vehicles/*/*.png')
+    #vehicle_images = glob.glob('training_data/vehicles/*/*.png')
+
+    non_vehicle_images = glob.glob('training_data/non-vehicles_smallset/*/*.jpeg')
+    vehicle_images = glob.glob('training_data/vehicles_smallset/*/*.jpeg')
+
+    print('USING SMALLSET JPEG IMAGES!!!! us mping to load in features')
+    print ('Trainig Data:')
+    print('Car images:', len(vehicle_images))
+    print('Non-Car images:', len(non_vehicle_images))
+
+
     cars = []
     notcars = []
-    for image in images:
-        if 'image' in image or 'extra' in image:
-            notcars.append(image)
-        else:
+
+    for image in vehicle_images:
             cars.append(image)
 
-    # TODO play with these values to see how your classifier
+    for image in non_vehicle_images:
+            notcars.append(image)
+
+    # experemted with play with these values to see how your classifier
     # performs under different binning scenarios
     spatial = 32
     histbin = 32
 
 
-    car_features = extract_features(cars, cspace='RGB', spatial_size=(spatial, spatial),
+    print('Generating Features for Cars')
+    car_features = extract_features(cars, color_space='RGB', spatial_size=(spatial, spatial),
                             hist_bins=histbin, hist_range=(0, 256),orient=9,
                             pix_per_cell=8, cell_per_block=2, hog_channel=0,
                             spatial_feat=True, hist_feat=True, hog_feat=True)
 
+    print('Generating Features for non car images')
 
-    notcar_features = extract_features(notcars, cspace='RGB', spatial_size=(spatial, spatial),
+    notcar_features = extract_features(notcars, color_space='RGB', spatial_size=(spatial, spatial),
                             hist_bins=histbin, hist_range=(0, 256),orient=9,
                             pix_per_cell=8, cell_per_block=2, hog_channel=0,
                             spatial_feat=True, hist_feat=True, hog_feat=True)
@@ -65,24 +83,31 @@ def load_and_train_all_features():
     print('Using spatial binning of:',spatial,
         'and', histbin,'histogram bins')
     print('Feature vector length:', len(X_train[0]))
+
     # Use a linear SVC
-    svc = LinearSVC()
+    svc = LinearSVC(C=1.0)
+    #clf = CalibratedClassifierCV(svc) # performance was same on small sample set.
+    clf = svc
     # Check the training time for the SVC
     t=time.time()
-    svc.fit(X_train, y_train)
+    clf.fit(X_train, y_train)
     t2 = time.time()
     print(round(t2-t, 2), 'Seconds to train SVC...')
     # Check the score of the SVC
-    print('Test Accuracy of SVC = ', round(svc.score(X_test, y_test), 4))
+    print('Test Accuracy of SVC = ', round(clf.score(X_test, y_test), 4))
     # Check the prediction time for a single sample
     t=time.time()
     n_predict = 10
-    print('My SVC predicts: ', svc.predict(X_test[0:n_predict]))
+    print('My SVC predicts:     ', clf.predict(X_test[0:n_predict]))
     print('For these',n_predict, 'labels: ', y_test[0:n_predict])
     t2 = time.time()
     print(round(t2-t, 5), 'Seconds to predict', n_predict,'labels with SVC')
 
-#load_and_train_all_features()
-images = glob.glob('training_data/non-vehicles/GTI/*.png')
-images.append(glob.glob('training_data/non-vehicles/Extras/*.png'))
-print (images)
+    print('saving model to classifier-svm.pkl')
+    joblib.dump(clf, 'models/classifer-svm.pkl')
+    joblib.dump(X_scaler, 'models/xscaler.pkl')
+
+
+    return clf,X_scaler
+
+clf = load_and_train_all_features()
