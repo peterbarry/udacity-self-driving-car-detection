@@ -95,10 +95,16 @@ def process_videofile():
     #####################################
     # Run our pipeline on the test video
     #####################################
+    clip = VideoFileClip("./test_video.mp4")
+    output_video = "./test_video_output.mp4"
+    output_clip = clip.fl_image(process_image)
+    output_clip.write_videofile(output_video, audio=False)
+
     clip = VideoFileClip("./project_video.mp4")
     output_video = "./project_video_output.mp4"
     output_clip = clip.fl_image(process_image)
     output_clip.write_videofile(output_video, audio=False)
+
 
 
 process_test_images()
