@@ -1,6 +1,8 @@
 
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
+from moviepy.editor import VideoFileClip
+
 import numpy as np
 import cv2
 import glob
@@ -32,12 +34,9 @@ y_start_stop = [400, 656] # Min and max in y to search in slide_window()
 
 
 print('Model loaded')
-def process_test_images():
 
-        test_jpeg = glob.glob('test_images/*.jpg')
-        for img_name in test_jpeg:
-            print(img_name)
-            image = mpimg.imread(img_name)
+def process_image(image):
+
             draw_image = np.copy(image)
 
             # Uncomment the following line if you extracted training
@@ -66,15 +65,41 @@ def process_test_images():
                                     hog_channel=hog_channel, spatial_feat=spatial_feat,
                                     hist_feat=hist_feat, hog_feat=hog_feat)
 
-            window_img = draw_boxes(draw_image, hot_windows, color=(0, 0, 255), thick=6)
-            search_img = draw_boxes(draw_image, windows, color=(0, 0, 255), thick=6)
+            window_img = draw_boxes(draw_image, hot_windows, color=(0, 0, 255), thick=2)
+
+            #window_img = draw_boxes(window_img, windows, color=(0, 255, 0), thick=2)
+
+            return window_img
+
+
+def process_test_images():
+
+        test_jpeg = glob.glob('test_images/*.jpg')
+        for img_name in test_jpeg:
+            print(img_name)
+            image = mpimg.imread(img_name)
+            out_image = process_image(image)
 
             names = img_name.split('.')
             print ('saving:1')
             base = 'output_images/' + names[0]+'-detect.png'
-            cv2.imwrite(base,window_img)
+            cv2.imwrite(base,out_image)
 
-            base = 'output_images/' + names[0]+'-search.png'
-            cv2.imwrite(base,search_img)
+
+
+
+
+def process_videofile():
+    print("Running on test video1...")
+
+    #####################################
+    # Run our pipeline on the test video
+    #####################################
+    clip = VideoFileClip("./project_video.mp4")
+    output_video = "./project_video_output.mp4"
+    output_clip = clip.fl_image(process_image)
+    output_clip.write_videofile(output_video, audio=False)
+
 
 process_test_images()
+process_videofile()
