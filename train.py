@@ -24,13 +24,14 @@ from sklearn.cross_validation import train_test_split
 def load_and_train_all_features():
     # Read in car and non-car images
 
-    #non_vehicle_images = glob.glob('training_data/non-vehicles/*/*.png')
-    #vehicle_images = glob.glob('training_data/vehicles/*/*.png')
-
-    non_vehicle_images = glob.glob('training_data/non-vehicles_smallset/*/*.jpeg')
-    vehicle_images = glob.glob('training_data/vehicles_smallset/*/*.jpeg')
-
-    print('USING SMALLSET JPEG IMAGES!!!! us mping to load in features')
+    non_vehicle_images = glob.glob('training_data/non-vehicles/*/*.png')
+    vehicle_images = glob.glob('training_data/vehicles/*/*.png')
+    train_jpeg=False
+    #non_vehicle_images = glob.glob('training_data/non-vehicles_smallset/*/*.jpeg')
+    #vehicle_images = glob.glob('training_data/vehicles_smallset/*/*.jpeg')
+    #train_jpeg=True
+    #print('USING SMALLSET JPEG IMAGES!!!! us mping to load in features')
+    
     print ('Trainig Data:')
     print('Car images:', len(vehicle_images))
     print('Non-Car images:', len(non_vehicle_images))
@@ -47,22 +48,35 @@ def load_and_train_all_features():
 
     # experemted with play with these values to see how your classifier
     # performs under different binning scenarios
-    spatial = 32
-    histbin = 32
+
+
+    colorspace = 'YCrCb' # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
+    orient = 9  # HOG orientations
+    pix_per_cell = 8 # HOG pixels per cell
+    cell_per_block = 2 # HOG cells per block
+    hog_channel = 'ALL' # Can be 0, 1, 2, or "ALL"
+    spatial=32
+    spatial_size = (spatial, spatial) # Spatial binning dimensions
+    hist_bins = 32    # Number of histogram bins
+    spatial_feat = True # Spatial features on or off
+    hist_feat = True # Histogram features on or off
+    hog_feat = True # HOG features on or off
+    y_start_stop = [400, 656] # Min and max in y to search in slide_window()
+    train_jpeg=False
 
 
     print('Generating Features for Cars')
-    car_features = extract_features(cars, color_space='RGB', spatial_size=(spatial, spatial),
-                            hist_bins=histbin, hist_range=(0, 256),orient=9,
-                            pix_per_cell=8, cell_per_block=2, hog_channel=0,
-                            spatial_feat=True, hist_feat=True, hog_feat=True)
+    car_features = extract_features(cars, color_space=colorspace, spatial_size=(spatial, spatial),
+                            hist_bins=hist_bins, hist_range=(0, 256),orient=orient,
+                            pix_per_cell=pix_per_cell, cell_per_block=cell_per_block, hog_channel=hog_channel,
+                            spatial_feat=spatial_feat, hist_feat=hist_feat, hog_feat=hog_feat,train_jpeg=train_jpeg)
 
     print('Generating Features for non car images')
 
-    notcar_features = extract_features(notcars, color_space='RGB', spatial_size=(spatial, spatial),
-                            hist_bins=histbin, hist_range=(0, 256),orient=9,
-                            pix_per_cell=8, cell_per_block=2, hog_channel=0,
-                            spatial_feat=True, hist_feat=True, hog_feat=True)
+    notcar_features = extract_features(notcars, color_space=colorspace, spatial_size=(spatial, spatial),
+                            hist_bins=hist_bins, hist_range=(0, 256),orient=orient,
+                            pix_per_cell=pix_per_cell, cell_per_block=cell_per_block, hog_channel=hog_channel,
+                            spatial_feat=spatial_feat, hist_feat=hist_feat, hog_feat=hog_feat,train_jpeg=train_jpeg)
 
     # Create an array stack of feature vectors
     X = np.vstack((car_features, notcar_features)).astype(np.float64)
@@ -81,7 +95,7 @@ def load_and_train_all_features():
         scaled_X, y, test_size=0.2, random_state=rand_state)
 
     print('Using spatial binning of:',spatial,
-        'and', histbin,'histogram bins')
+        'and', hist_bins,'histogram bins')
     print('Feature vector length:', len(X_train[0]))
 
     # Use a linear SVC
