@@ -32,8 +32,9 @@ hist_bins = 32    # Number of histogram bins
 spatial_feat = True # Spatial features on or off
 hist_feat = True # Histogram features on or off
 hog_feat = True # HOG features on or off
-y_start_stop = [400, 656] # Min and max in y to search in slide_window()
+y_start_stop = [400, 650] # Min and max in y to search in slide_window()
 draw_raw_clasification_boxes = True
+draw_search_boxes = True
 add_inter_frame_processing = False
 draw_frame_hotbox=False
 
@@ -55,16 +56,32 @@ def process_image(image):
             #windows = slide_window(image, x_start_stop=[None, None], y_start_stop=y_start_stop,
             #                    xy_window=(96, 96), xy_overlap=(0.5, 0.5))
 
-            windows = slide_window(image, x_start_stop=[None, None], y_start_stop=[y_start_stop[0], y_start_stop[1]],
-                        xy_window=(256, 256), xy_overlap=(0.5, 0.5))
+            baseline=False
+            if baseline == True:
+                windows = slide_window(image, x_start_stop=[None, None], y_start_stop=[y_start_stop[0], y_start_stop[1]],
+                            xy_window=(256, 256), xy_overlap=(0.5, 0.5))
 
-            windows = windows + slide_window(image, x_start_stop=[None, None], y_start_stop=[y_start_stop[0], 600],
-                        xy_window=(128, 128), xy_overlap=(0.8, 0.8))
+                windows = windows + slide_window(image, x_start_stop=[None, None], y_start_stop=[y_start_stop[0], 600],
+                            xy_window=(128, 128), xy_overlap=(0.8, 0.8))
 
 
-            windows = windows + slide_window(image, x_start_stop=[300, 1000], y_start_stop=[y_start_stop[0], 480],
-                        xy_window=(64, 64), xy_overlap=(0.9, 0.9))
+                windows = windows + slide_window(image, x_start_stop=[300, 1000], y_start_stop=[y_start_stop[0], 480],
+                            xy_window=(64, 64), xy_overlap=(0.9, 0.9))
+            else:
+                windows = slide_window(image, x_start_stop=[None, None], y_start_stop=[y_start_stop[0], y_start_stop[1]],
+                            xy_window=(256, 256), xy_overlap=(0.8, 0.8))
 
+                windows = windows + slide_window(image, x_start_stop=[None, None], y_start_stop=[y_start_stop[0], 600],
+                            xy_window=(128, 128), xy_overlap=(0.8, 0.8))
+
+
+                windows = windows + slide_window(image, x_start_stop=[300, 1000], y_start_stop=[y_start_stop[0], 480],
+                            xy_window=(64, 64), xy_overlap=(0.9, 0.9))
+
+
+            if draw_search_boxes == True:
+                window_img = draw_boxes(draw_image, windows, color=(255, 255, 0), thick=2)
+                draw_image = window_img
 
             hot_windows = search_windows(image, windows, clf, X_scaler, color_space=colorspace,
                                     spatial_size=spatial_size, hist_bins=hist_bins,
@@ -74,7 +91,7 @@ def process_image(image):
                                     hist_feat=hist_feat, hog_feat=hog_feat)
 
             if draw_raw_clasification_boxes == True:
-                window_img = draw_boxes(draw_image, hot_windows, color=(0, 255, 255), thick=2)
+                window_img = draw_boxes(draw_image, hot_windows, color=(255, 0, 0), thick=2)
                 draw_image = window_img
 
 
@@ -178,6 +195,6 @@ draw_raw_clasification_boxes=True
 draw_frame_hotbox=False
 process_test_images()
 add_inter_frame_processing = True
-draw_raw_clasification_boxes=False
+draw_raw_clasification_boxes=True
 draw_frame_hotbox=True
 process_videofile()
