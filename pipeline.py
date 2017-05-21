@@ -12,6 +12,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.externals import joblib
 from window import *
+from scipy.ndimage.measurements import label
+
 
 
 print('Loading model ')
@@ -31,7 +33,12 @@ spatial_feat = True # Spatial features on or off
 hist_feat = True # Histogram features on or off
 hog_feat = True # HOG features on or off
 y_start_stop = [400, 656] # Min and max in y to search in slide_window()
+draw_raw_clasification_boxes = True
+add_inter_frame_processing = False
 
+#move this to a class.
+number_of_frames_history = 4
+interframe_list_of_boxes=[]
 
 print('Model loaded')
 
@@ -65,9 +72,64 @@ def process_image(image):
                                     hog_channel=hog_channel, spatial_feat=spatial_feat,
                                     hist_feat=hist_feat, hog_feat=hog_feat)
 
-            window_img = draw_boxes(draw_image, hot_windows, color=(0, 0, 255), thick=2)
+            if draw_raw_clasification_boxes == True:
+                window_img = draw_boxes(draw_image, hot_windows, color=(0, 255, 255), thick=2)
+                draw_image = window_img
 
+
+
+            print('mum of hot windows:')
+            print(len(hot_windows))
+            print('add interframe processing')
+            print(add_inter_frame_processing)
+            # Generate a collection of windows-inter frame
+            if add_inter_frame_processing == True:
+                #Adding heatmap summary box
+                heat_frame = np.zeros_like(image[:,:,0]).astype(np.float)
+                heat_frame = add_heat(heat_frame,hot_windows)
+                    # Apply threshold to help remove false positives
+                heat_frame = apply_heat_threshold(heat_frame,1)
+
+                    # Visualize the heatmap when displaying
+                heatmap = np.clip(heat_frame, 0, 255)
+                # Find final boxes from heatmap using label function
+                labels = label(heatmap)
+                boxes = get_boxes_from_labels(labels)
+                print('Windows found in this frame')
+                print(len(boxes))
+
+                interframe_list_of_boxes.append(boxes)
+                if len(interframe_list_of_boxes) > number_of_frames_history:
+                    interframe_list_of_boxes.pop(0)
+
+                #concatante list of windows over multiple frames.
+                print('len of interframe array')
+                print(len(interframe_list_of_boxes))
+                hot_windows_list = []
+                for list in interframe_list_of_boxes:
+                    for wind in list:
+                        hot_windows_list.append(wind)
+            else:
+                hot_windows_list = hot_windows
+
+            print('mum of interfarame hot windows:')
+            print(len(hot_windows_list))
+
+
+            #Adding heatmap summary box
+            heat = np.zeros_like(image[:,:,0]).astype(np.float)
             #window_img = draw_boxes(window_img, windows, color=(0, 255, 0), thick=2)
+            # Add heat to each box in box list
+            heat = add_heat(heat,hot_windows_list)
+                                # Apply threshold to help remove false positives
+            heat = apply_heat_threshold(heat,1)
+
+                                # Visualize the heatmap when displaying
+            heatmap = np.clip(heat, 0, 255)
+
+            # Find final boxes from heatmap using label function
+            labels = label(heatmap)
+            window_img = draw_labeled_bboxes(draw_image, labels)
 
             return window_img
 
@@ -105,7 +167,7 @@ def process_videofile():
     output_clip = clip.fl_image(process_image)
     output_clip.write_videofile(output_video, audio=False)
 
-
-
+add_inter_frame_processing = False
 process_test_images()
+add_inter_frame_processing = True
 process_videofile()
