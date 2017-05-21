@@ -35,6 +35,7 @@ hog_feat = True # HOG features on or off
 y_start_stop = [400, 656] # Min and max in y to search in slide_window()
 draw_raw_clasification_boxes = True
 add_inter_frame_processing = False
+draw_frame_hotbox=False
 
 #move this to a class.
 number_of_frames_history = 4
@@ -97,6 +98,11 @@ def process_image(image):
                 boxes = get_boxes_from_labels(labels)
                 print('Windows found in this frame')
                 print(len(boxes))
+
+
+                if draw_frame_hotbox == True:
+                        window_img = draw_boxes(draw_image, boxes, color=(0, 255, 0), thick=2)
+                        draw_image = window_img
 
                 interframe_list_of_boxes.append(boxes)
                 if len(interframe_list_of_boxes) > number_of_frames_history:
@@ -168,6 +174,10 @@ def process_videofile():
     output_clip.write_videofile(output_video, audio=False)
 
 add_inter_frame_processing = False
+draw_raw_clasification_boxes=True
+draw_frame_hotbox=False
 process_test_images()
 add_inter_frame_processing = True
+draw_raw_clasification_boxes=False
+draw_frame_hotbox=True
 process_videofile()
