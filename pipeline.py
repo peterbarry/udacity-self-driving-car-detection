@@ -34,12 +34,11 @@ hist_feat = True # Histogram features on or off
 hog_feat = True # HOG features on or off
 y_start_stop = [400, 650] # Min and max in y to search in slide_window()
 draw_raw_clasification_boxes = True
-draw_search_boxes = True
 add_inter_frame_processing = False
 draw_frame_hotbox=False
 
 #move this to a class.
-number_of_frames_history = 4
+number_of_frames_history = 2
 interframe_list_of_boxes=[]
 
 print('Model loaded')
@@ -79,10 +78,6 @@ def process_image(image):
                             xy_window=(64, 64), xy_overlap=(0.9, 0.9))
 
 
-            if draw_search_boxes == True:
-                window_img = draw_boxes(draw_image, windows, color=(255, 255, 0), thick=2)
-                draw_image = window_img
-
             hot_windows = search_windows(image, windows, clf, X_scaler, color_space=colorspace,
                                     spatial_size=spatial_size, hist_bins=hist_bins,
                                     orient=orient, pix_per_cell=pix_per_cell,
@@ -95,11 +90,6 @@ def process_image(image):
                 draw_image = window_img
 
 
-
-            print('mum of hot windows:')
-            print(len(hot_windows))
-            print('add interframe processing')
-            print(add_inter_frame_processing)
             # Generate a collection of windows-inter frame
             if add_inter_frame_processing == True:
                 #Adding heatmap summary box
@@ -113,9 +103,6 @@ def process_image(image):
                 # Find final boxes from heatmap using label function
                 labels = label(heatmap)
                 boxes = get_boxes_from_labels(labels)
-                print('Windows found in this frame')
-                print(len(boxes))
-
 
                 if draw_frame_hotbox == True:
                         window_img = draw_boxes(draw_image, boxes, color=(0, 255, 0), thick=2)
@@ -126,8 +113,7 @@ def process_image(image):
                     interframe_list_of_boxes.pop(0)
 
                 #concatante list of windows over multiple frames.
-                print('len of interframe array')
-                print(len(interframe_list_of_boxes))
+
                 hot_windows_list = []
                 for list in interframe_list_of_boxes:
                     for wind in list:
@@ -135,8 +121,7 @@ def process_image(image):
             else:
                 hot_windows_list = hot_windows
 
-            print('mum of interfarame hot windows:')
-            print(len(hot_windows_list))
+
 
 
             #Adding heatmap summary box
@@ -192,9 +177,9 @@ def process_videofile():
 
 add_inter_frame_processing = False
 draw_raw_clasification_boxes=True
-draw_frame_hotbox=False
-process_test_images()
-add_inter_frame_processing = True
-draw_raw_clasification_boxes=True
 draw_frame_hotbox=True
+process_test_images()
+add_inter_frame_processing = False
+draw_raw_clasification_boxes=False
+draw_frame_hotbox=False
 process_videofile()
